@@ -31,8 +31,17 @@
 }
 
 @layer components {
+  input, select, textarea {
+    font-size: 16px;
+    touch-action: manipulation;
+  }
+
+  html {
+    touch-action: manipulation;
+  }
+
   .input-modern {
-    @apply w-full rounded-xl border border-sage-300 bg-white px-4 py-3 text-sm
+    @apply w-full rounded-xl border border-sage-300 bg-white px-4 py-3 text-base
       placeholder:text-sage-400 shadow-sm transition-all duration-200
       focus:border-sage-800 focus:outline-none focus:ring-1 focus:ring-sage-800/10;
   }

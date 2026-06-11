@@ -221,15 +221,11 @@ function DeleteBucketModal({
 // ─── Login / Register Page ───────────────────────────────────────────
 
 function LoginPage({ onLogin }: { onLogin: () => void }) {
-  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [registered, setRegistered] = useState(false)
   const [legalModal, setLegalModal] = useState<'terms' | 'about' | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -244,37 +240,6 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
       onLogin()
     }
   }
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      setLoading(false)
-      return
-    }
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      setError(data.error || 'Registration failed')
-      setLoading(false)
-    } else {
-      setRegistered(true)
-      setLoading(false)
-    }
-  }
-
-  const handleSubmit = mode === 'login' ? handleLogin : handleRegister
 
   return (
     <div className="flex min-h-screen">
@@ -315,170 +280,85 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
           </div>
 
           <div className="rounded-2xl border border-sage-300 bg-white px-8 py-10 shadow-sm">
-            {/* Mode toggle */}
-            {registered ? null : (
-              <div className="mb-6 flex rounded-lg border border-sage-300 p-0.5">
-                <button
-                  onClick={() => { setMode('login'); setError('') }}
-                  className={cn(
-                    'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all duration-150',
-                    mode === 'login' ? 'bg-sage-900 text-white shadow-sm' : 'text-sage-600 hover:text-sage-900'
-                  )}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => { setMode('register'); setError('') }}
-                  className={cn(
-                    'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all duration-150',
-                    mode === 'register' ? 'bg-sage-900 text-white shadow-sm' : 'text-sage-600 hover:text-sage-900'
-                  )}
-                >
-                  Register
-                </button>
+            <h2 className="text-xl font-bold text-sage-900">Welcome back</h2>
+            <p className="mt-1 text-sm text-sage-500">Sign in to manage your buckets</p>
+
+            <form onSubmit={handleLogin} className="mt-8 space-y-5">
+              <div>
+                <label htmlFor="login-email" className="block text-sm font-medium text-sage-900">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="input-modern mt-1.5 w-full"
+                  placeholder="you@example.com"
+                />
               </div>
-            )}
 
-            {registered ? (
-              <div className="animate-fade-in-up text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
-                  <svg className="h-7 w-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-bold text-sage-900">Account created</h2>
-                <p className="mt-2 text-sm text-sage-600">
-                  You can now sign in with your credentials.
-                </p>
-                <button
-                  onClick={() => { setMode('login'); setRegistered(false); setError('') }}
-                  className="btn-primary mt-6 w-full"
-                >
-                  Sign in
-                </button>
-              </div>
-            ) : (
-              <>
-                <h2 className="text-xl font-bold text-sage-900">
-                  {mode === 'login' ? 'Welcome back' : 'Create account'}
-                </h2>
-                <p className="mt-1 text-sm text-sage-500">
-                  {mode === 'login' ? 'Sign in to manage your buckets' : 'Register to start managing R2 buckets'}
-                </p>
-
-                <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-                  <div>
-                    <label htmlFor="login-email" className="block text-sm font-medium text-sage-900">
-                      Email
-                    </label>
-                    <input
-                      id="login-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      autoComplete="email"
-                      className="input-modern mt-1.5 w-full"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="login-password" className="block text-sm font-medium text-sage-900">
-                      Password
-                    </label>
-                    <div className="relative mt-1.5">
-                      <input
-                        id="login-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                        className="input-modern w-full pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 transition-colors"
-                      >
-                        {showPassword ? (
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                          </svg>
-                        ) : (
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {mode === 'register' && (
-                    <div>
-                      <label htmlFor="login-confirm" className="block text-sm font-medium text-sage-900">
-                        Confirm Password
-                      </label>
-                      <div className="relative mt-1.5">
-                        <input
-                          id="login-confirm"
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          autoComplete="new-password"
-                          className="input-modern w-full pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 transition-colors"
-                        >
-                          {showConfirmPassword ? (
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                            </svg>
-                          ) : (
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div className="animate-fade-in-up rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-600 ring-1 ring-red-100">
-                      {error}
-                    </div>
-                  )}
-
+              <div>
+                <label htmlFor="login-password" className="block text-sm font-medium text-sage-900">
+                  Password
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    className="input-modern w-full pr-10"
+                  />
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-primary w-full"
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 transition-colors"
                   >
-                    {loading ? (
-                      <>
-                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        {mode === 'login' ? 'Signing in...' : 'Creating account...'}
-                      </>
+                    {showPassword ? (
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
                     ) : (
-                      mode === 'login' ? 'Sign in' : 'Create account'
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                     )}
                   </button>
-                </form>
-              </>
-            )}
+                </div>
+              </div>
+
+              {error && (
+                <div className="animate-fade-in-up rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-600 ring-1 ring-red-100">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full"
+              >
+                {loading ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </button>
+            </form>
           </div>
-          {/* Mobile legal links */}
+
           <div className="mt-6 flex justify-center gap-5 text-xs lg:hidden">
             <button onClick={() => setLegalModal('terms')} className="text-sage-400 underline underline-offset-2 hover:text-sage-700 transition-colors">
               Terms & Conditions
@@ -1681,6 +1561,12 @@ function Dashboard({ addToast, accessToken }: { addToast: (t: Omit<Toast, 'id'>)
               : 'hidden'
           )}
         >
+          {/* Mobile title */}
+          <div className="border-b border-sage-300 px-6 py-4 md:hidden">
+            <p className="text-sm font-bold" style={{ color: '#171717' }}>R2BM</p>
+            <p className="text-xs font-medium" style={{ color: '#737373' }}>by only4.fun</p>
+          </div>
+
           {/* Buckets header */}
           <div className="flex items-center justify-between border-b border-sage-300 px-6 py-5">
             <h2 className="text-sm font-bold uppercase tracking-wider text-sage-500">Buckets</h2>
@@ -1725,7 +1611,7 @@ function Dashboard({ addToast, accessToken }: { addToast: (t: Omit<Toast, 'id'>)
                   key={b.Name}
                   bucket={b}
                   isSelected={selectedBucket === b.Name}
-                  onSelect={() => setSelectedBucket(b.Name)}
+                  onSelect={() => { setSelectedBucket(b.Name); setSidebarOpen(false); }}
                   onDelete={setDeletingBucket}
                 />
               ))

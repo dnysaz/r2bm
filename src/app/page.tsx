@@ -838,7 +838,7 @@ function UploadZone({ onUpload, inputRef }: { onUpload: (e: React.ChangeEvent<HT
         ref={ref}
         type="file"
         onChange={onUpload}
-        accept="image/*"
+        accept="image/*,video/*,application/pdf"
         className="hidden"
       />
       <div className="flex flex-col items-center gap-3">
@@ -851,7 +851,7 @@ function UploadZone({ onUpload, inputRef }: { onUpload: (e: React.ChangeEvent<HT
           <p className="text-base font-semibold" style={{ color: '#171717' }}>
             <span className="text-sage-500">Click to upload</span> or drag and drop
           </p>
-          <p className="mt-1 text-sm text-sage-400">PNG, JPG, GIF, WebP, SVG (max 10MB)</p>
+          <p className="mt-1 text-sm text-sage-400">Images, Videos, PDFs supported</p>
         </div>
       </div>
     </div>
@@ -907,6 +907,13 @@ function BucketCard({
 
 // ─── File Card ──────────────────────────────────────────────────────
 
+function getFileType(key: string): 'image' | 'video' | 'pdf' {
+  const ext = key.split('.').pop()?.toLowerCase() || ''
+  if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
+  if (ext === 'pdf') return 'pdf'
+  return 'image'
+}
+
 function FileCard({
   file,
   bucket,
@@ -924,16 +931,17 @@ function FileCard({
   onOpenCopyModal: (data: { fileName: string; linkUrl: string; embedHtml: string } | null) => void
   onOpenLightbox: (url: string) => void
 }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [shortUrl, setShortUrl] = useState<string | null>(null)
-  const [loadingImage, setLoadingImage] = useState(true)
-  const [imageError, setImageError] = useState(false)
+  const [loadingUrl, setLoadingUrl] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const type = getFileType(file.Key)
 
   useEffect(() => {
     if (bucketDomain) {
       const url = `https://${bucketDomain.replace(/^https?:\/\//, '')}/${encodeURIComponent(file.Key)}`
       setShortUrl(url)
-      setImageUrl(url)
+      setFileUrl(url)
     }
     let cancelled = false
     ;(async () => {
@@ -945,49 +953,65 @@ function FileCard({
           const data = await res.json()
           if (!cancelled) {
             if (!bucketDomain) {
-              setImageUrl(data.url)
+              setFileUrl(data.url)
               if (data.shortUrl) setShortUrl(data.shortUrl)
             }
           }
         } else {
-          if (!cancelled && !bucketDomain) setImageError(true)
+          if (!cancelled && !bucketDomain) setLoadError(true)
         }
       } catch {
-        if (!cancelled && !bucketDomain) setImageError(true)
+        if (!cancelled && !bucketDomain) setLoadError(true)
       } finally {
-        if (!cancelled) setLoadingImage(false)
+        if (!cancelled) setLoadingUrl(false)
       }
     })()
     return () => { cancelled = true }
   }, [file.Key, bucket, creds, bucketDomain])
 
-  const copyUrl = shortUrl || imageUrl || ''
-  const embedTag = `<img
-  src="${escapeHtml(copyUrl)}"
-  alt="${escapeHtml(file.Key)}"
-/>`
+  const copyUrl = shortUrl || fileUrl || ''
+
+  const embedTag = type === 'video'
+    ? `<video controls\n  src="${escapeHtml(copyUrl)}"\n  style="max-width:100%">\n</video>`
+    : type === 'pdf'
+    ? `<a href="${escapeHtml(copyUrl)}" target="_blank">${escapeHtml(file.Key)}</a>`
+    : `<img\n  src="${escapeHtml(copyUrl)}"\n  alt="${escapeHtml(file.Key)}"\n/>`
 
   return (
     <div className="group animate-fade-in-up rounded-xl border border-sage-300 bg-white transition-all duration-200 hover:shadow-md hover:border-sage-400">
-      {/* Image preview */}
+      {/* Preview */}
       <div className="aspect-[4/3] overflow-hidden rounded-t-xl bg-sage-50">
-        {loadingImage ? (
+        {loadingUrl ? (
           <div className="flex h-full items-center justify-center">
             <div className="h-8 w-8 animate-pulse rounded-lg bg-sage-200" />
           </div>
-        ) : imageUrl && !imageError ? (
+        ) : type === 'image' && fileUrl && !loadError ? (
           <img
-            src={imageUrl}
+            src={fileUrl}
             alt={file.Key}
             className="h-full w-full cursor-pointer object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={() => setImageError(true)}
-            onClick={() => imageUrl && onOpenLightbox(imageUrl)}
+            onError={() => setLoadError(true)}
+            onClick={() => fileUrl && onOpenLightbox(fileUrl)}
+          />
+        ) : type === 'video' && fileUrl ? (
+          <video
+            src={fileUrl}
+            className="h-full w-full object-contain cursor-pointer"
+            controls
+            preload="metadata"
+            onClick={(e) => { e.preventDefault(); window.open(fileUrl, '_blank') }}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <svg className="h-10 w-10 text-sage-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-            </svg>
+            {type === 'pdf' ? (
+              <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+            ) : (
+              <svg className="h-10 w-10 text-sage-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+              </svg>
+            )}
           </div>
         )}
       </div>
@@ -1207,7 +1231,7 @@ function FilesGrid({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <p className="text-xs" style={{ color: '#737373' }}>Upload an image to get started</p>
+        <p className="text-xs" style={{ color: '#737373' }}>Upload images, videos, or PDFs to get started</p>
       </div>
     )
   }
@@ -1541,23 +1565,25 @@ function Dashboard({ addToast, accessToken }: { addToast: (t: Omit<Toast, 'id'>)
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setPendingFile(null)} />
           <div className="animate-scale-in mx-4 w-full max-w-sm rounded-2xl border border-sage-300 bg-white shadow-2xl">
             <div className="px-6 py-5">
-              <h3 className="text-lg font-bold text-sage-900">Upload Image</h3>
+              <h3 className="text-lg font-bold text-sage-900">Upload File</h3>
               <div className="mt-3 space-y-2">
                 <p className="truncate text-sm font-medium text-sage-700">{pendingFile.name}</p>
                 <p className="text-sm text-sage-500">{formatSize(pendingFile.size)}</p>
               </div>
-              <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-sage-200 px-4 py-3 transition-colors hover:bg-sage-50">
-                <input
-                  type="checkbox"
-                  checked={compressEnabled}
-                  onChange={(e) => setCompressEnabled(e.target.checked)}
-                  className="h-4 w-4 rounded border-sage-300 text-sage-900 focus:ring-sage-500"
-                />
-                <div>
-                  <span className="text-sm font-medium text-sage-800">Compress image</span>
-                  <p className="text-xs text-sage-500">Auto-compress to ≤128 KB</p>
-                </div>
-              </label>
+              {pendingFile.type.startsWith('image/') && (
+                <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-sage-200 px-4 py-3 transition-colors hover:bg-sage-50">
+                  <input
+                    type="checkbox"
+                    checked={compressEnabled}
+                    onChange={(e) => setCompressEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-sage-300 text-sage-900 focus:ring-sage-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-sage-800">Compress image</span>
+                    <p className="text-xs text-sage-500">Auto-compress to ≤128 KB</p>
+                  </div>
+                </label>
+              )}
             </div>
             <div className="flex gap-3 border-t border-sage-200 px-6 py-4">
               <button
@@ -1827,7 +1853,7 @@ function Dashboard({ addToast, accessToken }: { addToast: (t: Omit<Toast, 'id'>)
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           )}
-          {uploadingFile ? 'Uploading...' : 'Image'}
+          {uploadingFile ? 'Uploading...' : 'Upload'}
         </button>
       </div>
     </div>

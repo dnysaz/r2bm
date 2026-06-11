@@ -9,12 +9,24 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import sharp from 'sharp'
 import { getR2Client } from '@/lib/r2-client'
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024
-const ALLOWED_TYPES = (
-  process.env.ALLOWED_FILE_TYPES ||
-  'image/jpeg,image/png,image/gif,image/webp,image/svg+xml'
-).split(',')
+const MAX_SIZES: Record<string, number> = {
+  image: 2 * 1024 * 1024,
+  video: 5 * 1024 * 1024,
+  pdf: 1 * 1024 * 1024,
+}
+const ALLOWED_TYPES: Record<string, string[]> = {
+  image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+  video: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'],
+  pdf: ['application/pdf'],
+}
 const COMPRESSION_TIMEOUT_MS = parseInt(process.env.COMPRESSION_TIMEOUT_MS || '5000', 10)
+
+function getFileCategory(mime: string): 'image' | 'video' | 'pdf' | null {
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('video/')) return 'video'
+  if (mime === 'application/pdf') return 'pdf'
+  return null
+}
 
 function parseCreds(header: string | null, formDataCreds?: string | null) {
   if (formDataCreds) return JSON.parse(formDataCreds)
@@ -156,28 +168,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const contentType = file.type || getContentType(Buffer.from(await file.arrayBuffer()))
+    const category = getFileCategory(contentType)
+
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Only images, videos, and PDFs are allowed' },
+        { status: 400 }
+      )
+    }
+
+    const maxSize = MAX_SIZES[category]
+    if (file.size > maxSize) {
+      const labels = { image: '2 MB', video: '5 MB', pdf: '1 MB' }
+      return NextResponse.json(
+        { error: `File size exceeds ${labels[category]}` },
+        { status: 400 }
+      )
+    }
+
     const arrayBuffer = await file.arrayBuffer()
     const originalBuffer = Buffer.from(arrayBuffer)
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `File size exceeds 2 MB` },
-        { status: 400 }
-      )
-    }
-
-    const contentType = file.type || getContentType(originalBuffer)
-
-    if (!ALLOWED_TYPES.includes(contentType)) {
-      return NextResponse.json(
-        {
-          error: `File type ${contentType} not allowed. Allowed types: ${ALLOWED_TYPES.join(', ')}`,
-        },
-        { status: 400 }
-      )
-    }
-
-    const bodyBuffer = compress
+    const bodyBuffer = compress && category === 'image'
       ? await Promise.race([
           compressImage(originalBuffer, contentType),
           new Promise<never>((_, reject) =>

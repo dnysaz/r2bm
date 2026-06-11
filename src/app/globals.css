@@ -1,26 +1,140 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
+    --primary: #000000;
+    --primary-light: #333333;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d4 transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d4d4d4;
+    border-radius: 3px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .input-modern {
+    @apply w-full rounded-xl border border-sage-300 bg-white px-4 py-3 text-sm
+      placeholder:text-sage-400 shadow-sm transition-all duration-200
+      focus:border-sage-800 focus:outline-none focus:ring-1 focus:ring-sage-800/10;
+  }
+  .input-modern {
+    color: #171717;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-sage-900
+      px-5 py-3 text-sm font-semibold text-white shadow-sm
+      transition-all duration-150 hover:bg-sage-800
+      focus:outline-none focus:ring-1 focus:ring-sage-800/20
+      active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold
+      text-sage-800 shadow-sm ring-1 ring-sage-300 transition-all duration-150
+      hover:bg-sage-50 focus:outline-none focus:ring-1 focus:ring-sage-800/20
+      active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600
+      px-5 py-3 text-sm font-semibold text-white shadow-sm
+      transition-all duration-150 hover:bg-red-700
+      focus:outline-none focus:ring-1 focus:ring-red-600/20
+      active:scale-[0.98] disabled:opacity-50;
+  }
+
+  .table-modern {
+    @apply w-full text-sm;
+  }
+
+  .table-modern thead tr {
+    @apply border-b border-sage-200;
+  }
+
+  .table-modern thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-sage-600;
+  }
+
+  .table-modern tbody tr {
+    @apply border-b border-sage-100 transition-colors duration-150 hover:bg-sage-50;
+  }
+
+  .table-modern tbody td {
+    @apply px-4 py-3 text-sm text-sage-700;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-10px) rotate(1deg); }
+    66% { transform: translateY(5px) rotate(-1deg); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 8s ease-in-out 2s infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
 }

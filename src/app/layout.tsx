@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "R2BM | Cloudflare R2 File Manager by only4.fun",
+  title: "R2BM | Cloudflare R2 Bucket Manager by only4.fun",
   description: "Upload, organize, and share your files on Cloudflare R2 storage. Fast image compression, public URLs, and secure credential management.",
-  keywords: ["R2", "Cloudflare R2", "file manager", "image upload", "image compression", "R2 bucket", "only4fun"],
+  keywords: ["R2", "Cloudflare R2", "bucket manager", "image upload", "image compression", "R2 bucket", "only4fun"],
   authors: [{ name: "Ketut Dana", url: "https://github.com/dnysaz" }],
   openGraph: {
-    title: "R2BM — Cloudflare R2 File Manager",
+    title: "R2BM — Cloudflare R2 Bucket Manager",
     description: "Upload, organize, and share files on Cloudflare R2 storage with auto-compression.",
     type: "website",
   },

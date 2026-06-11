@@ -1,4 +1,4 @@
-# R2BM — Cloudflare R2 File Manager
+# R2BM — Cloudflare R2 Bucket Manager
 
 Manage Cloudflare R2 buckets directly from your browser. Upload images (auto-compressed to ≤128 KB), videos, and PDFs. Generate public URLs with QR codes, share embed codes, and enable r2.dev public domains — all with encrypted credential storage.
 

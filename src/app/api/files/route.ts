@@ -79,7 +79,7 @@ async function compressImage(
       return buffer
     }
 
-    const outputFormat = metadata.format === 'gif' ? 'gif' : 'jpeg'
+    const outputFormat = metadata.format === 'gif' ? 'gif' : 'webp'
 
     let quality = 80
     let result = buffer
@@ -87,7 +87,7 @@ async function compressImage(
     while (quality >= 10) {
       const compressed = await image
         .clone()
-        .toFormat(outputFormat, { quality, mozjpeg: true })
+        .toFormat(outputFormat, { quality })
         .toBuffer()
 
       if (compressed.length <= TARGET_SIZE) {
@@ -104,7 +104,7 @@ async function compressImage(
         const resized = await image
           .clone()
           .resize(Math.round(metadata.width * scale), Math.round(metadata.height * scale), { fit: 'inside' })
-          .toFormat(outputFormat, { quality: 60, mozjpeg: true })
+          .toFormat(outputFormat, { quality: 60 })
           .toBuffer()
 
         if (resized.length <= TARGET_SIZE) {
